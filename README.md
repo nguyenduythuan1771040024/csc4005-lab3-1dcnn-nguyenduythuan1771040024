@@ -1,84 +1,74 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/gCMAv6Pv)
-# CSC4005 Lab 3 – Environmental Sound Classification with 1D-CNN
+# CSC4005 Lab 3 - UrbanSound8K Classification with 1D-CNN
 
+Repository này là bài làm Lab 3 cho bài toán phân loại âm thanh môi trường trên bộ dữ liệu UrbanSound8K. Pipeline chính dùng MFCC/log-mel theo thời gian và mô hình 1D-CNN. Phần raw waveform 1D-CNN được chạy thêm như bài mở rộng để so sánh.
 
-Case study: **UrbanSound8K** – phân loại 10 loại âm thanh môi trường.
+## 1. Nội dung đã hoàn thành
 
-Trọng tâm của lab:
-- tiền xử lý audio về cùng sample rate và độ dài,
-- trích xuất đặc trưng **MFCC/log-mel theo thời gian**,
-- huấn luyện **1D-CNN** trên chuỗi đặc trưng,
-- log thí nghiệm bằng **Weights & Biases (W&B)**,
-- phân tích learning curves và confusion matrix.
+- Đọc metadata và audio theo cấu trúc UrbanSound8K.
+- Chia dữ liệu theo fold:
+  - train: fold 1-8
+  - validation: fold 9
+  - test: fold 10
+- Chuẩn hóa audio về mono, `16000 Hz`, độ dài `4.0` giây.
+- Trích xuất MFCC, log-mel hoặc raw waveform.
+- Huấn luyện 1D-CNN với BatchNorm, ReLU, MaxPool và Dropout.
+- Lưu `metrics.json`, `history.csv`, `curves.png`, `confusion_matrix.png`.
+- Chạy W&B ở chế độ offline để có thể sync sau.
+- Viết báo cáo kết quả trong `REPORT.md`.
 
-Phần **raw waveform 1D-CNN** đã được chuẩn bị trong repo nhưng được đặt là **bài mở rộng**, không phải cấu hình chính trên lớp.
-
----
-
-## 1. Cấu trúc repo
+## 2. Cấu trúc chính
 
 ```text
-csc4005_lab3_urbansound8k_1dcnn_starter/
-├── README.md
-├── REPORT_TEMPLATE.md
-├── requirements.txt
+.
 ├── configs/
 │   ├── baseline_mfcc_1dcnn.json
-│   ├── fast_debug.json
-│   └── extension_raw_waveform.json
+│   ├── extension_raw_waveform.json
+│   └── fast_debug.json
 ├── docs/
+│   ├── GITHUB_CLASSROOM_GUIDE.md
+│   ├── LAB_GUIDE_LAB3.md
 │   ├── RUBRIC.md
-│   ├── WANDB_GUIDE.md
-│   └── LAB_GUIDE_LAB3.md
-├── notebooks/
-│   └── lab3_demo.ipynb
+│   └── WANDB_GUIDE.md
 ├── outputs/
+│   ├── 1771040024_mfcc_1dcnn_baseline/
+│   ├── 1771040024_logmel_1dcnn/
+│   └── 1771040024_raw_waveform_extension/
 ├── src/
-│   ├── __init__.py
 │   ├── dataset.py
 │   ├── model.py
 │   ├── train.py
 │   └── utils.py
-└── ci/
-    ├── check_structure.py
-    └── smoke_train.py
+├── ci/
+│   ├── check_structure.py
+│   └── smoke_train.py
+├── REPORT.md
+├── REPORT_TEMPLATE.md
+├── requirements.txt
+└── README.md
 ```
 
----
+Dataset UrbanSound8K, file `.rar`, cache, W&B local log và checkpoint `.pt` không được commit lên GitHub.
 
-## 2. Cài đặt môi trường
+## 3. Cài đặt môi trường
 
-### macOS / Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### Windows
+Khuyến nghị dùng Python 3.10 hoặc 3.11.
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-Kiểm tra lệnh chạy:
+Trong lần chạy thực tế, môi trường Conda đã dùng là:
 
-```bash
-python -m src.train --help
+```text
+C:\Users\nguye\.conda\envs\DL\python.exe
 ```
 
----
+## 4. Chuẩn bị dữ liệu
 
-## 3. Dữ liệu UrbanSound8K
-
-Repo này **không chứa dữ liệu**. Sinh viên cần tải UrbanSound8K và truyền đường dẫn qua `--data_dir`.
-
-Cấu trúc dữ liệu được hỗ trợ:
+Giải nén UrbanSound8K sao cho có cấu trúc:
 
 ```text
 UrbanSound8K/
@@ -90,166 +80,110 @@ UrbanSound8K/
     └── UrbanSound8K.csv
 ```
 
-Có thể truyền vào:
+Khi chạy lệnh train, truyền đường dẫn qua `--data_dir`.
 
-```bash
---data_dir /duong_dan/UrbanSound8K
-```
-
-hoặc file zip:
-
-```bash
---data_dir /duong_dan/UrbanSound8K.zip
-```
-
-Starter kit sẽ tự tìm file `UrbanSound8K.csv` và các file `.wav` tương ứng trong thư mục `audio/fold*/`.
-
----
-
-## 4. Cấu hình chính khuyến nghị cho lớp học
-
-Cấu hình chính dùng **MFCC + 1D-CNN** để lab chạy ổn trên CPU/laptop cá nhân:
-
-```bash
-python -m src.train \
-  --config configs/baseline_mfcc_1dcnn.json \
-  --data_dir /duong_dan/UrbanSound8K
-```
-
-Cấu hình này dùng:
-
-- sample rate: `16000 Hz`
-- duration: `4.0 giây`
-- feature: `MFCC`, `n_mfcc=40`
-- split theo fold:
-  - train: fold 1–8
-  - validation: fold 9
-  - test: fold 10
-- giới hạn mẫu theo lớp để lab chạy ổn:
-  - `max_train_per_class=120`
-  - `max_eval_per_class=50`
-- W&B: bật mặc định
-
----
-
-## 5. Chạy nhanh để kiểm tra pipeline
-
-Khi mới setup môi trường, nên chạy cấu hình debug trước:
-
-```bash
-python -m src.train \
-  --config configs/fast_debug.json \
-  --data_dir /duong_dan/UrbanSound8K
-```
-
-Cấu hình này chỉ dùng một phần nhỏ dữ liệu để kiểm tra:
-
-- code đọc được dữ liệu,
-- feature cache hoạt động,
-- model train được,
-- W&B log được.
-
----
-
-## 6. W&B là yêu cầu bắt buộc của lab
-
-Trước khi chạy train chính:
-
-```bash
-wandb login
-```
-
-Khi chạy xong, sinh viên cần nộp link W&B run hoặc project dashboard trong báo cáo.
-
-Có thể chạy offline khi mạng yếu:
-
-```bash
-python -m src.train \
-  --config configs/baseline_mfcc_1dcnn.json \
-  --data_dir /duong_dan/UrbanSound8K \
-  --wandb_mode offline
-```
-
-Sau đó đồng bộ lại:
-
-```bash
-wandb sync wandb/offline-run-...
-```
-
----
-
-## 7. Output sau khi train
-
-Mỗi run tạo thư mục:
-
-```text
-outputs/<run_name>/
-```
-
-bao gồm:
-
-- `best_model.pt`
-- `history.csv`
-- `curves.png`
-- `confusion_matrix.png`
-- `metrics.json`
-- `used_config.json`
-
-W&B cần log tối thiểu:
-
-- `train_loss`
-- `val_loss`
-- `train_acc`
-- `val_acc`
-- `lr`
-- `epoch_time_sec`
-- `best_val_acc`
-- `test_acc`
-- `confusion_matrix_image`
-- `curves_image`
-
----
-
-## 8. Bài mở rộng: 1D-CNN trực tiếp trên raw waveform
-
-Phần raw waveform đã có cấu hình riêng:
-
-```bash
-python -m src.train \
-  --config configs/extension_raw_waveform.json \
-  --data_dir /duong_dan/UrbanSound8K
-```
-
-Sinh viên khá/giỏi có thể so sánh:
-
-| Pipeline | Biểu diễn đầu vào | Mục tiêu |
-|---|---|---|
-| MFCC + 1D-CNN | chuỗi đặc trưng MFCC | cấu hình chính, ổn định |
-| log-mel + 1D-CNN | chuỗi đặc trưng phổ mel | biến thể để thử nghiệm |
-| raw waveform + 1D-CNN | tín hiệu âm thanh gốc | bài mở rộng, khó hơn |
-
-Không yêu cầu raw waveform phải tốt hơn MFCC. Điều quan trọng là sinh viên giải thích được vì sao kết quả khác nhau.
-
----
-
-## 9. Checklist nộp bài
-
-- [ ] Chạy được ít nhất 1 run `MFCC + 1D-CNN`
-- [ ] Có link W&B dashboard/run
-- [ ] Có `curves.png`
-- [ ] Có `confusion_matrix.png`
-- [ ] Có bảng metric: train/val/test accuracy
-- [ ] Có nhận xét lớp nào dễ nhầm lẫn
-- [ ] Có giải thích ngắn: vì sao 1D-CNN phù hợp với chuỗi đặc trưng audio
-- [ ] Bài mở rộng, nếu làm: so sánh thêm raw waveform hoặc log-mel
-
----
-
-## 10. Lệnh kiểm tra CI local
+## 5. Chạy kiểm tra nhanh
 
 ```bash
 python ci/check_structure.py
 python ci/smoke_train.py
 ```
 
-`smoke_train.py` tự tạo dữ liệu audio giả lập nhỏ theo format UrbanSound8K để kiểm tra pipeline, không cần tải dataset thật.
+Kết quả mong đợi:
+
+```text
+Structure OK
+Smoke train OK
+```
+
+## 6. Chạy các thí nghiệm
+
+### MFCC baseline
+
+```bash
+python -m src.train ^
+  --config configs/baseline_mfcc_1dcnn.json ^
+  --data_dir UrbanSound8K ^
+  --run_name 1771040024_mfcc_1dcnn_baseline ^
+  --wandb_mode offline
+```
+
+### Log-mel extension
+
+```bash
+python -m src.train ^
+  --config configs/baseline_mfcc_1dcnn.json ^
+  --data_dir UrbanSound8K ^
+  --feature_type logmel ^
+  --run_name 1771040024_logmel_1dcnn ^
+  --wandb_mode offline
+```
+
+### Raw waveform extension
+
+```bash
+python -m src.train ^
+  --config configs/extension_raw_waveform.json ^
+  --data_dir UrbanSound8K ^
+  --run_name 1771040024_raw_waveform_extension ^
+  --wandb_mode offline
+```
+
+## 7. Kết quả đã chạy
+
+| Pipeline | Best val acc | Test acc | Avg epoch time |
+|---|---:|---:|---:|
+| MFCC + 1D-CNN | 0.6091 | 0.5097 | 6.07 s |
+| log-mel + 1D-CNN | 0.6631 | 0.6065 | 6.63 s |
+| raw waveform + 1D-CNN | 0.5832 | 0.6022 | 33.11 s |
+
+Trong các thí nghiệm đã chạy, log-mel + 1D-CNN là hướng tốt nhất vì có test accuracy cao nhất và thời gian train gần MFCC hơn nhiều so với raw waveform.
+
+## 8. Output nộp bài
+
+Các thư mục output đã lưu:
+
+```text
+outputs/1771040024_mfcc_1dcnn_baseline/
+outputs/1771040024_logmel_1dcnn/
+outputs/1771040024_raw_waveform_extension/
+```
+
+Mỗi thư mục nộp các file:
+
+- `metrics.json`
+- `history.csv`
+- `curves.png`
+- `confusion_matrix.png`
+- `used_config.json`
+
+Checkpoint `best_model.pt` được tạo khi train nhưng không commit vì là file nhị phân lớn và không bắt buộc trong rubric.
+
+## 9. W&B
+
+Các run được tạo ở chế độ offline. Sau khi đăng nhập W&B, sync bằng:
+
+```bash
+wandb sync wandb/offline-run-20260514_091110-bklv1ims
+wandb sync wandb/offline-run-20260514_091254-shu77u10
+wandb sync wandb/offline-run-20260514_091503-un1cg0lh
+```
+
+Sau khi sync, dán link W&B project hoặc run vào `REPORT.md`.
+
+## 10. Báo cáo
+
+Báo cáo chính nằm ở:
+
+```text
+REPORT.md
+```
+
+Báo cáo đã phân tích:
+
+- cấu hình tiền xử lý,
+- kiến trúc 1D-CNN,
+- learning curves,
+- confusion matrix,
+- các lớp dễ nhầm,
+- so sánh MFCC, log-mel và raw waveform.

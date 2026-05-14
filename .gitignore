@@ -1,20 +1,34 @@
 # Python
 __pycache__/
 *.py[cod]
+*.log
+Lab-*.pdf
 .venv/
 venv/
 .env
 
 # Data and generated artifacts
 data/
+UrbanSound8K/
 .cache/
 outputs/*
 !outputs/.gitkeep
+!outputs/1771040024_*/
+!outputs/1771040024_*/metrics.json
+!outputs/1771040024_*/history.csv
+!outputs/1771040024_*/curves.png
+!outputs/1771040024_*/confusion_matrix.png
+!outputs/1771040024_*/used_config.json
+*.rar
 *.zip
 *.tar.gz
 *.pt
 *.pth
 *.ckpt
+lab3_pdf.txt
+tools/
+.tmp_ci_cache/
+.tmp_ci_urbansound/
 
 # W&B
 wandb/
